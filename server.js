@@ -1,32 +1,76 @@
 const express = require('express');
-const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const axios = require('axios');
+
 const app = express();
+const port = 3000;
+app.use(express.json())
+
+const externalApiUrl = 'https://boasorte.teddybackoffice.com.br/users';
 
 
-app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 
-}));
+app.post('/users', async (req, res) => {
+  const {
+    name,
+    salary,
+    companyValuation,
+  } = req.body;
 
-const targetUrl = 'https://boasorte.teddybackoffice.com.br/users';
+  try {
+    const response = await axios.post(externalApiUrl, {
+      name,
+      salary,
+      companyValuation
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error.response ? error.response.data : error.message);
+    res.status(500).json({
+      error: 'Erro ao criar usuário',
+      details: error.response ? error.response.data : error.message
+    });
+  }
+});
 
-app.use(express.json());
+app.get('/users', async (req, res) => {
+  try {
+    const response = await axios.get(externalApiUrl);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao consumir a API externa', details: error.message });
+  }
+});
 
-app.use('/api', createProxyMiddleware({
-  target: targetUrl,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api': '', // Remove '/api' do caminho da URL antes de encaminhar para o targetUrl
-  },
-  onProxyRes: (proxyRes, req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); 
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE'); 
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');}
-}));
 
-module.exports = (req, res) => {
-  app(req, res);
-};
+app.delete('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const response = await axios.delete(`${externalApiUrl}/${userId}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao consumir a API externa', details: error.message });
+  }
+});
+
+
+app.patch('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  const userData = req.body;
+  try {
+    const response = await axios.patch(`${externalApiUrl}/${userId}`, userData);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao consumir a API externa', details: error.message });
+  }
+});
+
+
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
+});
