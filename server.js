@@ -82,6 +82,18 @@ app.patch('/users/:id', async (req, res) => {
 });
 
 
+app.get('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const response = await axios.get(`${externalApiUrl}/${userId}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao consumir a API externa', details: error.message });
+  }
+});
+
+
+
 
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
