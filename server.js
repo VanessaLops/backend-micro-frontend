@@ -61,14 +61,26 @@ app.delete('/users/:id', async (req, res) => {
 
 app.patch('/users/:id', async (req, res) => {
   const userId = req.params.id;
-  const userData = req.body;
+  const {
+    name,
+    salary,
+    companyValuation,
+  } = req.body;
+
   try {
-    const response = await axios.patch(`${externalApiUrl}/${userId}`, userData);
+    
+    const response = await axios.put(externalApiUrl + userId, {
+      name,
+      salary,
+      companyValuation,
+    });
     res.json(response.data);
   } catch (error) {
+
     res.status(500).json({ error: 'Erro ao consumir a API externa', details: error.message });
   }
 });
+
 
 
 app.listen(port, () => {
